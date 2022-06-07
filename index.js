@@ -64,11 +64,11 @@ function startServer() {
         encryption: process.env.MCC_ENCRYPTION.toLowerCase() == "true",
         'online-mode': process.env.MCC_ONLINE_MODE.toLowerCase() == "true",
         hideErrors: true,
+        version: false,
         beforePing: (response, client) => {
             if(serverIcon) {
                 response.favicon = serverIcon
             }
-            response.version.protocol = client.protocolVersion
         }
     });
     logger.info("Started MinecraftCapes Auth on", process.env.MCC_SERVER_IP + ":" + process.env.MCC_SERVER_PORT);

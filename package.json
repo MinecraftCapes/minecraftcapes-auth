@@ -9,9 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^14.2.0",
+    "dotenv": "^16.0.1",
     "form-data": "^4.0.0",
-    "log4js": "^6.4.0",
-    "minecraft-protocol": "^1.30.0"
+    "log4js": "^6.5.2",
+    "minecraft-protocol": "^1.35.0"
   }
 }
