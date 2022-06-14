@@ -1,0 +1,14 @@
+# Intelij Stuff
+.idea
+*.iml
+.idea
+
+#Gradle
+.gradle/
+
+# Runs
+libs/
+run/
+
+# Target
+**/build/
