@@ -10,9 +10,15 @@ repositories {
         name 'papermc'
         url 'https://repo.papermc.io/repository/maven-public/'
     }
+    mavenCentral()
 }
 
 dependencies {
+    //Velocity
     compileOnly 'com.velocitypowered:velocity-api:3.0.1'
     annotationProcessor 'com.velocitypowered:velocity-api:3.0.1'
+
+    //Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
