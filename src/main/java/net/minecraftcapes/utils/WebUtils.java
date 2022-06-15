@@ -41,7 +41,7 @@ public class WebUtils {
 
             //Return nothing if an error
             if(response.statusCode() / 100 != 2) {
-                MinecraftCapesAuth.getInstance().getLogger().error("{} Recieved an invalid {} response from MinecraftCapes!", uuid, response.statusCode());
+                MinecraftCapesAuth.getInstance().getLogger().error("{} Received an invalid {} response from MinecraftCapes!", uuid, response.statusCode());
                 return null;
             }
 
@@ -61,7 +61,7 @@ public class WebUtils {
     private static HttpRequest.BodyPublisher getRequestData(UUID uuid, String username) {
         Map<Object, Object> data = new HashMap<>();
         data.put("key", Configs.settings.API_KEY);
-        data.put("uuid", uuid);
+        data.put("uuid", uuid.toString().replaceAll("-", ""));
         data.put("username", username);
 
         StringBuilder builder = new StringBuilder();

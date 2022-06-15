@@ -16,15 +16,22 @@ public class PlayerListener {
      */
     @Subscribe
     public void onPreLogin(LoginEvent event) {
-        MinecraftCapesAuth.getInstance().getLogger().info(event.getPlayer().getUsername(), "is requesting an auth code");
+        MinecraftCapesAuth.getInstance().getLogger().info("{} is requesting an auth code", event.getPlayer().getUsername());
 
         //The Auth Data
         WebUtils.AuthData authData = WebUtils.requestAuthData(event.getPlayer().getUniqueId(), event.getPlayer().getUsername());
         Component playerResponse = this.getLoginResponse(authData);
 
-        event.setResult(ResultedEvent.ComponentResult.denied(playerResponse));
+        //Kick the player
+        Component finalMessage = LegacyComponentSerializer.legacyAmpersand().deserialize(
+                "&8&l&m===============================\n\n" +
+                "&a&lMinecraftCapes\n\n"
+        ).append(playerResponse).append(LegacyComponentSerializer.legacyAmpersand().deserialize(
+                "\n\n&8&l&m===============================\n"
+        ));
+        event.setResult(ResultedEvent.ComponentResult.denied(finalMessage));
 
-        MinecraftCapesAuth.getInstance().getLogger().info(event.getPlayer().getUsername(), "has been served");
+        MinecraftCapesAuth.getInstance().getLogger().info("{} has been served", event.getPlayer().getUsername());
     }
 
     /**
@@ -35,10 +42,11 @@ public class PlayerListener {
     private Component getLoginResponse(WebUtils.AuthData authData) {
         Component errorMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&c&lSomething went wrong\nPlease reconnect to try again");
         Component blockedMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&c&lYour account has been banned for violating our terms of service.");
-        Component authMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&fYour authorization code is\n&c&l\u00BB&f " + authData.code + " &c&l\u00AB`");
 
         //If we have no data, lets tell the user
         if(authData == null) return errorMessage;
+
+        Component authMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&fYour authorization code is\n&c&l\u00BB&f " + authData.code + " &c&l\u00AB");
 
         //If we have data we can return a code, an error or a banned message
         if(authData.success) {

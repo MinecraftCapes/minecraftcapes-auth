@@ -10,6 +10,7 @@ import lombok.Getter;
 import net.minecraftcapes.configs.Configs;
 import net.minecraftcapes.listeners.PlayerListener;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
