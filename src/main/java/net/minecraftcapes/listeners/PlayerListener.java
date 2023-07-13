@@ -42,7 +42,6 @@ public class PlayerListener {
     private Component getLoginResponse(WebUtils.AuthData authData) {
         Component errorMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&c&lSomething went wrong\nPlease reconnect to try again");
         Component blockedMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&c&lYour account has been banned for violating our terms of service.");
-        Component oauthMessage = LegacyComponentSerializer.legacyAmpersand().deserialize("&c&lYou have linked your MinecraftCapes account to your Microsoft account.\nPlease choose \"Login with Microsoft\" to login");
 
         //If we have no data, lets tell the user
         if(authData == null) return errorMessage;
@@ -54,8 +53,6 @@ public class PlayerListener {
             return (authData.code == null) ? errorMessage : authMessage;
         } else if(authData.banned) {
             return blockedMessage;
-        } else if(authData.oauth) {
-            return oauthMessage;
         }
 
         //All else fails, we return an error

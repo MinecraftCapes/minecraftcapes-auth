@@ -82,7 +82,6 @@ public class WebUtils {
     public class AuthData {
         public boolean success;
         public boolean banned;
-        public boolean oauth;
         public String code;
     }
 
