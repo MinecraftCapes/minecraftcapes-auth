@@ -1,88 +1,108 @@
 package net.minecraftcapes.utils;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParser;
 import net.minecraftcapes.MinecraftCapesAuth;
 import net.minecraftcapes.configs.Configs;
 
+import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class WebUtils {
 
-    /**
-     * Will send a request to the website asking to auth a player
-     *
-     * @param uuid Players uuid
-     * @param username Players username
-     * @return The auth data in an object
-     */
-    public static AuthData requestAuthData(UUID uuid, String username) {
-        HttpRequest.BodyPublisher requestData = getRequestData(uuid, username);
+    private static final HttpClient CLIENT = HttpClient.newHttpClient();
+    private static final Gson GSON = new Gson();
 
-        //Build HTTP request
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(Configs.settings.API_ENDPOINT))
-                .POST(requestData)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .build();
-
+    public static UsersResponse requestUsers() {
         try {
-            //Make HTTP request
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(Configs.settings.USERS_ENDPOINT))
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "minecraftcapes-auth/2026")
+                    .GET()
+                    .build();
 
-            //Return nothing if an error
-            if(response.statusCode() / 100 != 2) {
-                MinecraftCapesAuth.getInstance().getLogger().error("{} Received an invalid {} response from MinecraftCapes!", uuid, response.statusCode());
+            HttpResponse<String> response = CLIENT.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            // Non-2xx response
+            if (response.statusCode() / 100 != 2) {
+                MinecraftCapesAuth.getInstance().getLogger().error(
+                        "Received invalid {} response from MinecraftCapes!",
+                        response.statusCode()
+                );
+
                 return null;
             }
 
-            return new Gson().fromJson(JsonParser.parseString(response.body()), AuthData.class);
-        } catch (Exception e) {
-            MinecraftCapesAuth.getInstance().getLogger().error(e.getLocalizedMessage());
+            // Parse JSON response
+            return GSON.fromJson(response.body(), UsersResponse.class);
+
+        } catch (IOException | InterruptedException e) {
+            MinecraftCapesAuth.getInstance().getLogger().error(
+                    "Failed to contact MinecraftCapes API",
+                    e
+            );
+
             return null;
         }
     }
 
-    /**
-     * Prepares the post body for an API request
-     * @param uuid Players uuid
-     * @param username Players username
-     * @return The Post data
-     */
-    private static HttpRequest.BodyPublisher getRequestData(UUID uuid, String username) {
-        Map<Object, Object> data = new HashMap<>();
-        data.put("key", Configs.settings.API_KEY);
-        data.put("uuid", uuid.toString().replaceAll("-", ""));
-        data.put("username", username);
+    public static AuthResponse requestAuth(UUID uuid, String username) {
+        try {
 
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<Object, Object> entry : data.entrySet()) {
-            if (builder.length() > 0) {
-                builder.append("&");
+            // Build JSON body
+            String json = GSON.toJson(new AuthRequest(
+                    uuid.toString().replace("-", ""),
+                    username
+            ));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(Configs.settings.AUTH_ENDPOINT))
+                    .header("Authorization", "Bearer " + Configs.settings.API_KEY)
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "minecraftcapes-auth/2026")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = CLIENT.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            // Non-2xx response
+            if (response.statusCode() / 100 != 2) {
+                MinecraftCapesAuth.getInstance().getLogger().error(
+                        "{} Received invalid {} response from MinecraftCapes!",
+                        uuid,
+                        response.statusCode()
+                );
+
+                return null;
             }
-            builder.append(URLEncoder.encode(entry.getKey().toString(), StandardCharsets.UTF_8));
-            builder.append("=");
-            builder.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8));
+
+            // Parse JSON response
+            return GSON.fromJson(response.body(), AuthResponse.class);
+
+        } catch (IOException | InterruptedException e) {
+            MinecraftCapesAuth.getInstance().getLogger().error(
+                    "{} Failed to contact MinecraftCapes API",
+                    uuid,
+                    e
+            );
+
+            return null;
         }
-        return HttpRequest.BodyPublishers.ofString(builder.toString());
     }
 
-    /**
-     * Just the class object for returning
-     */
-    public class AuthData {
-        public boolean success;
-        public boolean banned;
-        public String code;
-    }
+    public record UsersResponse(boolean success, String users) {}
 
+    private record AuthRequest(String uuid, String username) {}
+
+    public record AuthResponse(boolean success, boolean banned, String code) {}
 }

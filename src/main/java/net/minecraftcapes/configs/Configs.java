@@ -3,7 +3,6 @@ package net.minecraftcapes.configs;
 import com.moandjiezana.toml.Toml;
 import net.minecraftcapes.MinecraftCapesAuth;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -13,31 +12,42 @@ public class Configs {
 
     public static Settings settings;
 
-    /**
-     * Loads the config files.
-     * @param dataDirectory
-     */
     public static void loadConfigs(Path dataDirectory) {
-        //Create data directory
-        if(!dataDirectory.toFile().exists()) {
-            dataDirectory.toFile().mkdir();
-        }
+        try {
+            Files.createDirectories(dataDirectory);
 
-        //Find the settings file otherwise create it
-        File settingsFile = new File(dataDirectory + "/settings.toml");
-        if(!settingsFile.exists()) {
-            try (InputStream in = MinecraftCapesAuth.class.getResourceAsStream("/settings.toml")) {
-                Files.copy(in, new File(dataDirectory + "/settings.toml").toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
+            Path settingsPath = dataDirectory.resolve("settings.toml");
+
+            if (Files.notExists(settingsPath)) {
+                try (InputStream in = MinecraftCapesAuth.class.getResourceAsStream("/settings.toml")) {
+                    if (in == null) {
+                        throw new IOException("Default settings.toml resource not found");
+                    }
+
+                    Files.copy(in, settingsPath);
+                }
             }
-        }
 
-        Configs.settings = new Toml().read(settingsFile).to(Settings.class);
+            settings = new Toml()
+                    .read(settingsPath.toFile())
+                    .to(Settings.class);
+
+        } catch (IOException e) {
+            MinecraftCapesAuth.getInstance().getLogger().error(
+                    "Failed to load config files",
+                    e
+            );
+        }
     }
 
-    public class Settings {
-        public String API_ENDPOINT;
+    public static class Settings {
+        public String AUTH_ENDPOINT;
+        public String USERS_ENDPOINT;
         public String API_KEY;
+        public String MOTD;
+        public String ERROR_MESSAGE;
+        public String BLOCKED_MESSAGE;
+        public String AUTH_MESSAGE;
+        public String RESPONSE_LAYOUT;
     }
 }

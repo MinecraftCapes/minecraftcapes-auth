@@ -1,2 +1,19 @@
-API_ENDPOINT="https://minecraftcapes.net/api/account/auth"
+AUTH_ENDPOINT="http://localhost/auth"
+USERS_ENDPOINT="http://localhost/users"
 API_KEY=""
+
+MOTD="<bold><red>            ■ MinecraftCapes ■</red></bold>                                        <aqua>With <users> users!"
+
+ERROR_MESSAGE="<red><b>Something went wrong<newline>Please reconnect to try again"
+BLOCKED_MESSAGE="<red><b>Your account has been banned for violating our terms of service."
+AUTH_MESSAGE="<white>Your authorization code is<newline><red><b>»<white> <code> <red><b>«"
+
+RESPONSE_LAYOUT="""
+<dark_gray><b><st>===============================</st></b>
+
+<green><b>MinecraftCapes</b>
+
+<response>
+
+<dark_gray><b><st>===============================</st></b>
+"""
