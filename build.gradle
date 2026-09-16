@@ -1,11 +1,11 @@
 plugins {
     id 'java'
     id("io.freefair.lombok") version "9.5.0"
-    id("xyz.jpenilla.run-velocity") version "3.0.2"
+    id("xyz.jpenilla.run-velocity") version "3.1.0"
 }
 
 group 'net.minecraftcapes'
-version '1.2.0'
+version '1.2.1'
 
 repositories {
     maven {
@@ -15,15 +15,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.velocitypowered:velocity-api:3.5.0-SNAPSHOT'
-    annotationProcessor 'com.velocitypowered:velocity-api:3.5.0-SNAPSHOT'
+    compileOnly 'com.velocitypowered:velocity-api:4.2.1-SNAPSHOT'
+    annotationProcessor 'com.velocitypowered:velocity-api:4.2.1-SNAPSHOT'
 
-    compileOnly 'org.apache.logging.log4j:log4j-core:2.26.0'
+    compileOnly 'org.apache.logging.log4j:log4j-core:2.26.1'
 }
 
 tasks {
     runVelocity {
-        velocityVersion('3.5.0-SNAPSHOT')
+        velocityVersion("4.2.1-SNAPSHOT")
     }
 }
 
