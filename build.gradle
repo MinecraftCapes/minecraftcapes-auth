@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id("io.freefair.lombok") version "9.5.0"
     id("xyz.jpenilla.run-velocity") version "3.1.0"
 }
 
@@ -31,3 +30,14 @@ java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
     sourceCompatibility = targetCompatibility = 25
 }
+
+// Reuse the proxy APIs for regression checks without bundling them in the plugin.
+configurations.testImplementation.extendsFrom(configurations.compileOnly)
+tasks.register('regressionTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.minecraftcapes.listeners.RegressionChecks'
+}
+tasks.named('check') { dependsOn 'regressionTest' }
+// RegressionChecks is a standalone runner, so no JUnit discovery is needed.
+tasks.named('test') { failOnNoDiscoveredTests = false }

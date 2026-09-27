@@ -16,7 +16,7 @@ public class DisconnectFilter extends AbstractFilter {
 
 		String formatted = message.getFormattedMessage();
 
-		if (formatted.contains(" disconnected:") && formatted.contains("authorization")) {
+		if (formatted != null && formatted.contains(" disconnected:") && formatted.contains("authorization")) {
 			return Result.DENY;
 		}
 

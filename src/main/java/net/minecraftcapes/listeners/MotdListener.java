@@ -2,37 +2,38 @@ package net.minecraftcapes.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
-import com.velocitypowered.api.proxy.server.ServerPing;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.minecraftcapes.MinecraftCapesAuth;
 import net.minecraftcapes.configs.Configs;
-import net.minecraftcapes.utils.WebUtils;
 
-public class MotdListener {
+import java.util.Locale;
 
-	@Subscribe
-	public void onPing(ProxyPingEvent event) {
-		WebUtils.UsersResponse usersResponse = MinecraftCapesAuth.getInstance().getUsersResponse();
-		if(
-				usersResponse != null &&
-						usersResponse.success()
-		) {
-			MiniMessage miniMessage = MiniMessage.miniMessage();
+public final class MotdListener {
+    private volatile Component description;
+    private Long users;
 
-			// Pretty User Count
-			String users = String.format("%,d", Integer.parseInt(usersResponse.users()));
+    public synchronized void updateUsers(String value) {
+        long count = Long.parseLong(value);
+        if (count < 0) throw new IllegalArgumentException("Negative user count");
+        if (users == null || users != count) {
+            users = count;
+            reload();
+        }
+    }
 
-			// Apply placeholders
-			Component finalMessage = miniMessage.deserialize(
-					Configs.settings.MOTD,
-					Placeholder.parsed("users", users)
-			);
+    public synchronized void reload() {
+        if (users != null) {
+            description = MiniMessage.miniMessage().deserialize(Configs.settings.MOTD,
+                    Placeholder.unparsed("users", String.format(Locale.UK, "%,d", users)));
+        }
+    }
 
-			ServerPing ping = event.getPing().asBuilder().description(finalMessage).build();
-			event.setPing(ping);
-		}
-	}
-
+    @Subscribe
+    public void onPing(ProxyPingEvent event) {
+        Component cached = description;
+        if (cached != null) {
+            event.setPing(event.getPing().asBuilder().description(cached).build());
+        }
+    }
 }

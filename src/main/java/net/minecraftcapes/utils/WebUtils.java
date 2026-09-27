@@ -4,105 +4,60 @@ import com.google.gson.Gson;
 import net.minecraftcapes.MinecraftCapesAuth;
 import net.minecraftcapes.configs.Configs;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-public class WebUtils {
-
-    private static final HttpClient CLIENT = HttpClient.newHttpClient();
+public final class WebUtils {
+    private static final HttpClient CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5)).build();
     private static final Gson GSON = new Gson();
 
-    public static UsersResponse requestUsers() {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(Configs.settings.USERS_ENDPOINT))
-                    .header("Content-Type", "application/json")
-                    .header("User-Agent", "minecraftcapes-auth/2026")
-                    .GET()
-                    .build();
+    private WebUtils() {}
 
-            HttpResponse<String> response = CLIENT.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
-
-            // Non-2xx response
-            if (response.statusCode() / 100 != 2) {
-                MinecraftCapesAuth.getInstance().getLogger().error(
-                        "Received invalid {} response from MinecraftCapes!",
-                        response.statusCode()
-                );
-
-                return null;
-            }
-
-            // Parse JSON response
-            return GSON.fromJson(response.body(), UsersResponse.class);
-
-        } catch (IOException | InterruptedException e) {
-            MinecraftCapesAuth.getInstance().getLogger().error(
-                    "Failed to contact MinecraftCapes API",
-                    e
-            );
-
-            return null;
-        }
+    public static CompletableFuture<UsersResponse> requestUsers() {
+        return send(request(Configs.settings.USERS_ENDPOINT).GET().build(), UsersResponse.class);
     }
 
-    public static AuthResponse requestAuth(UUID uuid, String username) {
-        try {
+    public static CompletableFuture<AuthResponse> requestAuth(Configs.Settings settings,
+                                                              UUID uuid, String username, String skin) {
+        String json = GSON.toJson(new AuthRequest(uuid.toString().replace("-", ""), username, skin));
+        return send(request(settings.AUTH_ENDPOINT)
+                .header("Authorization", "Bearer " + settings.API_KEY)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json)).build(), AuthResponse.class);
+    }
 
-            // Build JSON body
-            String json = GSON.toJson(new AuthRequest(
-                    uuid.toString().replace("-", ""),
-                    username
-            ));
+    private static HttpRequest.Builder request(String endpoint) {
+        return HttpRequest.newBuilder(URI.create(endpoint))
+                .timeout(Duration.ofSeconds(10))
+                .header("User-Agent", "minecraftcapes-auth/2026");
+    }
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(Configs.settings.AUTH_ENDPOINT))
-                    .header("Authorization", "Bearer " + Configs.settings.API_KEY)
-                    .header("Content-Type", "application/json")
-                    .header("User-Agent", "minecraftcapes-auth/2026")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
+    private static <T> CompletableFuture<T> send(HttpRequest request, Class<T> type) {
+        return CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() / 100 != 2) {
+                        MinecraftCapesAuth.getInstance().getLogger().warn(
+                                "MinecraftCapes API returned HTTP {}", response.statusCode());
+                        return null;
+                    }
+                    return GSON.fromJson(response.body(), type);
+                }).exceptionally(error -> {
+                    MinecraftCapesAuth.getInstance().getLogger().warn("MinecraftCapes API request failed", error);
+                    return null;
+                });
+    }
 
-            HttpResponse<String> response = CLIENT.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
-
-            // Non-2xx response
-            if (response.statusCode() / 100 != 2) {
-                MinecraftCapesAuth.getInstance().getLogger().error(
-                        "{} Received invalid {} response from MinecraftCapes!",
-                        uuid,
-                        response.statusCode()
-                );
-
-                return null;
-            }
-
-            // Parse JSON response
-            return GSON.fromJson(response.body(), AuthResponse.class);
-
-        } catch (IOException | InterruptedException e) {
-            MinecraftCapesAuth.getInstance().getLogger().error(
-                    "{} Failed to contact MinecraftCapes API",
-                    uuid,
-                    e
-            );
-
-            return null;
-        }
+    public static void close() {
+        CLIENT.shutdownNow();
     }
 
     public record UsersResponse(boolean success, String users) {}
-
-    private record AuthRequest(String uuid, String username) {}
-
+    private record AuthRequest(String uuid, String username, String skin) {}
     public record AuthResponse(boolean success, boolean banned, String code) {}
 }
